@@ -21,12 +21,14 @@
 import argparse
 import json
 import csv
-import datetime
+from datetime import datetime, timedelta
 
 # The following libs must be installed with pip
 from icecream import ic
 # Disable debugging
 ic.disable()
+from pytz import timezone
+import pytz
 
 # Local modules
 from verbose import verbose, warning, error
@@ -43,8 +45,8 @@ class Options:
 
 
 
-class CarData:
-    """Holds data read from BMW CARDATA Ladehistorie"""
+class JSONData:
+    """Holds data read from BMW CARDATA .json"""
 
     def __init__(self):
         self.data = None
@@ -96,6 +98,57 @@ class CarData:
 
 
 
+class Ladehistorie(JSONData):
+    """Data handling for BMW CARDATA Ladehistorie"""
+
+    def __init__(self):
+        super().__init__()
+
+
+    def process_item(self, obj):
+        # Obj is a dict {}
+        if type(obj) != dict:
+            error("Ladehistorie: item is of type", type(obj))
+
+        # Get attributes
+        displayedSoc                    = obj["displayedSoc"]
+        displayedStartSoc               = obj["displayedStartSoc"]
+        endTime                         = obj["endTime"]
+        energyConsumedFromPowerGridKwh  = obj["energyConsumedFromPowerGridKwh"]
+        energyIncreaseHvbKwh            = obj["energyIncreaseHvbKwh"]
+        isPreconditioningActivated      = obj["isPreconditioningActivated"]
+        mileage                         = obj["mileage"]
+        mileageUnits                    = obj["mileageUnits"]
+        startTime                       = obj["startTime"]
+        timeZone                        = obj["timeZone"]
+        totalChargingDurationSec        = obj["totalChargingDurationSec"]
+
+        tz    = timezone(timeZone)
+        start = datetime.fromtimestamp(startTime).astimezone(tz)
+        end   = datetime.fromtimestamp(endTime).astimezone(tz)
+        km    = str(mileage) + " " + mileageUnits.lower()
+        consumed = energyConsumedFromPowerGridKwh
+        increase = energyIncreaseHvbKwh
+
+        print("Charging session:")
+        print(f"  {km}")
+        print(f"  {start} - {end}")
+        print(f"  {consumed:.2f} {increase:.2f} kWh")
+
+    
+    def process_data(self):
+        # Ladehistorie top-level is a list []
+        if type(self.data) != list:
+            error("Ladehistorie: top-level is of type", type(self.data))
+        
+        # Process charge history items
+        for item in self.data:
+            ic(item)
+            self.process_item(item)
+
+
+
+
 def main():
     arg = argparse.ArgumentParser(
         prog        = NAME,
@@ -118,7 +171,7 @@ def main():
 
     ic(args)
 
-    data = CarData()
+    data = Ladehistorie()
 
     for f in args.filename:
         print(arg.prog+":", "processing JSON file", f)
