@@ -40,6 +40,12 @@ NAME    = "bmw-cardata"
 
 
 
+class iX1:
+    capacity_net = 64.8     # Net capacity battery / kWh
+    capacity_gross = 66.5   # Gross capacity battery / kWh
+
+
+
 class Options:
     limit = 0
 
@@ -105,7 +111,7 @@ class Ladehistorie(JSONData):
         super().__init__()
 
 
-    def process_item(self, obj):
+    def process_item(self, index, obj):
         # Obj is a dict {}
         if type(obj) != dict:
             error("Ladehistorie: item is of type", type(obj))
@@ -123,17 +129,21 @@ class Ladehistorie(JSONData):
         timeZone                        = obj["timeZone"]
         totalChargingDurationSec        = obj["totalChargingDurationSec"]
 
+        bat1  = displayedStartSoc
+        bat2  = displayedSoc
         tz    = timezone(timeZone)
-        start = datetime.fromtimestamp(startTime).astimezone(tz)
-        end   = datetime.fromtimestamp(endTime).astimezone(tz)
+        start = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        end   = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        duration = int(totalChargingDurationSec / 60) # min
         km    = str(mileage) + " " + mileageUnits.lower()
-        consumed = energyConsumedFromPowerGridKwh
-        increase = energyIncreaseHvbKwh
+        pre      = "" ##NOTUSED: always True???## "(pre-conditoned)" if isPreconditioningActivated else ""
+        consumed = energyConsumedFromPowerGridKwh   # Consumed from grid
+        increase = energyIncreaseHvbKwh             # Stored in high voltage battery
+        loss  = (consumed - increase) / consumed * 100 if consumed > 0 else 0
 
-        print("Charging session:")
-        print(f"  {km}")
-        print(f"  {start} - {end}")
-        print(f"  {consumed:.2f} {increase:.2f} kWh")
+        print(f"[{index}] Charging session {start} / {duration} min")
+        print(f"  {km} {pre}")
+        print(f"  {bat1}% -> {bat2}%  {consumed:.2f} grid {increase:.2f} battery kWh, loss {loss:.1f}%")
 
     
     def process_data(self):
@@ -142,9 +152,9 @@ class Ladehistorie(JSONData):
             error("Ladehistorie: top-level is of type", type(self.data))
         
         # Process charge history items
-        for item in self.data:
-            ic(item)
-            self.process_item(item)
+        for i, obj in enumerate(self.data):
+            ic(obj)
+            self.process_item(i, obj)
 
 
 
