@@ -128,21 +128,23 @@ class Ladehistorie(JSONData):
         timeZone                        = obj["timeZone"]
         totalChargingDurationSec        = obj["totalChargingDurationSec"]
 
-        bat1  = displayedStartSoc
-        bat2  = displayedSoc
-        tz    = timezone(timeZone)
-        start = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        end   = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        duration = int(totalChargingDurationSec / 60) # min
-        km    = str(mileage) + " " + mileageUnits.lower()
+        bat1     = displayedStartSoc
+        bat2     = displayedSoc
+        tz       = timezone(timeZone)
+        start    = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        end      = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        duration = int(totalChargingDurationSec / 60 + 0.5) # min
+        km       = str(mileage) + " " + mileageUnits.lower()
         pre      = "" ##NOTUSED: always True???## "(pre-conditoned)" if isPreconditioningActivated else ""
         consumed = energyConsumedFromPowerGridKwh   # Consumed from grid
         increase = energyIncreaseHvbKwh             # Stored in high voltage battery
-        loss  = (consumed - increase) / consumed * 100 if consumed > 0 else 0
+        loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
+        delta    = iX1.capacity_net * (bat2 - bat1) / 100
 
-        print(f"[{index}] Charging session {start} / {duration} min")
-        print(f"  {km} {pre}")
-        print(f"  {bat1}% -> {bat2}%  {consumed:.2f} grid {increase:.2f} battery kWh, loss {loss:.1f}%")
+        print(f"[{index:02d}] Charging session: {start} / {duration} min")
+        print(f"     Mileage: {km} {pre}")
+        print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
+        print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%")
 
     
     def process_data(self):
@@ -152,7 +154,7 @@ class Ladehistorie(JSONData):
         
         # Process charge history items
         for i, obj in enumerate(self.data):
-            ic(obj)
+            ic(i, obj)
             self.process_item(i, obj)
 
 
@@ -166,6 +168,7 @@ def main():
     arg.add_argument("-v", "--verbose", action="store_true", help="verbose messages")
     arg.add_argument("-d", "--debug", action="store_true", help="more debug messages")
     arg.add_argument("-l", "--limit", type=int, help="limit recursion depth")
+    arg.add_argument("-L", "--ladehistorie", action="store_true", help="process Ladehistorie data")
     arg.add_argument("filename", nargs="+", help="filename")
 
     args = arg.parse_args()
@@ -180,10 +183,10 @@ def main():
 
     ic(args)
 
-    data = Ladehistorie()
+    data = Ladehistorie() if args.ladehistorie else JSONData()
 
     for f in args.filename:
-        print(arg.prog+":", "processing JSON file", f)
+        verbose("processing JSON file", f)
         data.read_json(f)
         data.process_data()
 
