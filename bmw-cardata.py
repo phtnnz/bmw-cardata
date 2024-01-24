@@ -21,14 +21,13 @@
 import argparse
 import json
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # The following libs must be installed with pip
 from icecream import ic
 # Disable debugging
 ic.disable()
 from pytz import timezone
-import pytz
 
 # Local modules
 from verbose import verbose, warning, error
