@@ -32,7 +32,6 @@ from pytz import timezone
 # Local modules
 from verbose import verbose, warning, error
 
-global VERSION, AUTHOR, NAME
 VERSION = "0.0 / 2024-01-24"
 AUTHOR  = "Martin Junius"
 NAME    = "bmw-cardata"
@@ -40,7 +39,7 @@ NAME    = "bmw-cardata"
 
 
 class iX1:
-    capacity_net = 64.8     # Net capacity battery / kWh
+    capacity_net   = 64.8   # Net capacity battery / kWh
     capacity_gross = 66.5   # Gross capacity battery / kWh
 
 
@@ -58,7 +57,7 @@ class JSONData:
 
 
     def read_json(self, file):
-        with open(file, 'r') as f:
+        with open(file, 'r', encoding="utf-8") as f:
             data = json.load(f)
         self.data = data
 
@@ -128,6 +127,9 @@ class Ladehistorie(JSONData):
         timeZone                        = obj["timeZone"]
         totalChargingDurationSec        = obj["totalChargingDurationSec"]
 
+        location                        = obj["chargingLocation"]["formattedAddress"]
+        public                          = "(Public)" if obj["publicChargingPoint"] else ""
+
         bat1     = displayedStartSoc
         bat2     = displayedSoc
         tz       = timezone(timeZone)
@@ -142,9 +144,11 @@ class Ladehistorie(JSONData):
         delta    = iX1.capacity_net * (bat2 - bat1) / 100
 
         print(f"[{index:02d}] Charging session: {start} / {duration} min")
+        print(f"     Location: {location} {public}")
         print(f"     Mileage: {km} {pre}")
-        print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
+        print(f"     Battery: {bat1}% -> {bat2}% (equates ~{delta:.2f} kWh)")
         print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%")
+        print()
 
     
     def process_data(self):
