@@ -17,6 +17,8 @@
 # ChangeLog
 # Version 0.0 / 2024-01-24
 #       First test version, analyse BMW CARDATA Ladehistorie
+# Version 0.1 / 2024-02-02
+#       Text representation of charging data completed
 
 import argparse
 import json
@@ -32,7 +34,7 @@ from pytz import timezone
 # Local modules
 from verbose import verbose, warning, error
 
-VERSION = "0.0 / 2024-01-24"
+VERSION = "0.1 / 2024-02-02"
 AUTHOR  = "Martin Junius"
 NAME    = "bmw-cardata"
 
@@ -173,7 +175,7 @@ def main():
     arg.add_argument("-d", "--debug", action="store_true", help="more debug messages")
     arg.add_argument("-l", "--limit", type=int, help="limit recursion depth")
     arg.add_argument("-L", "--ladehistorie", action="store_true", help="process Ladehistorie data")
-    arg.add_argument("filename", nargs="+", help="filename")
+    arg.add_argument("filename", nargs="+", help="JSON data file")
 
     args = arg.parse_args()
 
