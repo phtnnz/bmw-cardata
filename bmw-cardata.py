@@ -148,7 +148,7 @@ class Ladehistorie(JSONData):
         print(f"[{index:02d}] Charging session: {start} / {duration} min")
         print(f"     Location: {location} {public}")
         print(f"     Mileage: {km} {pre}")
-        print(f"     Battery: {bat1}% -> {bat2}% (equates ~{delta:.2f} kWh)")
+        print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
         print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%")
         print()
 
