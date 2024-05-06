@@ -196,7 +196,8 @@ class Ladehistorie(JSONData):
             error("Ladehistorie: top-level is of type", type(self.data))
         
         if Options.csv:
-            CSVOutput.add_csv_fields(["Start date", "Duration", "Location", "Public", "Mileage", "SoC1", "SoC2", "Delta", "Grid", "Battery", "Loss"])
+            CSVOutput.add_csv_fields(["Start date", "Duration/s", "Location", "Public", "Mileage/km", 
+                                      "SoC1/%", "SoC2/%", "Delta/kWh", "Grid/kWh", "Battery/kWh", "Loss/%"])
 
         # Process charge history items
         for i, obj in enumerate(self.data):
