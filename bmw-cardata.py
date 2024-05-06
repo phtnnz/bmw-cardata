@@ -179,7 +179,7 @@ class Ladehistorie(JSONData):
         delta    = iX1.capacity_net * (bat2 - bat1) / 100
 
         if Options.csv:
-            CSVOutput.add_csv_row([start, totalChargingDurationSec, location, public, mileage, bat1, bat2,
+            CSVOutput.add_csv_row([start, end, totalChargingDurationSec, location, public, mileage, bat1, bat2,
                                     val(delta), val(consumed), val(increase), val(loss)])
         else:
             print(f"[{index:02d}] Charging session: {start} / {duration} min")
@@ -196,7 +196,7 @@ class Ladehistorie(JSONData):
             error("Ladehistorie: top-level is of type", type(self.data))
         
         if Options.csv:
-            CSVOutput.add_csv_fields(["Start date", "Duration/s", "Location", "Public", "Mileage/km", 
+            CSVOutput.add_csv_fields(["Start date", "End date", "Duration/s", "Location", "Public", "Mileage/km", 
                                       "SoC1/%", "SoC2/%", "Delta/kWh", "Grid/kWh", "Battery/kWh", "Loss/%"])
 
         # Process charge history items
