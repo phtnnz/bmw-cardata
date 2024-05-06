@@ -19,7 +19,10 @@
 #       First test version, analyse BMW CARDATA Ladehistorie
 # Version 0.1 / 2024-02-02
 #       Text representation of charging data completed
+# Version 0.2 / 2024-05-06
+#       Added CSV output
 
+import sys
 import argparse
 import json
 import csv
@@ -48,7 +51,9 @@ class iX1:
 
 
 class Options:
-    limit = 0
+    limit = 0                       # -l --limit N
+    output = "Ladehistorie.csv"     # -o --output NAME
+    csv    = False                  # -C --csv
 
 
 
@@ -63,7 +68,7 @@ class CSVOutput:
         CSVOutput.fields = fields
 
     def write_csv(file):
-        with open(file, 'w', newline='') as f:
+        with open(file, 'w', newline='', encoding="utf-8") as f:
             ##FIXME: check  locale.RADIXCHAR
             if locale.localeconv()['decimal_point'] == ",":
                 # Use ; as the separator and quote all fields for easy import in "German" Excel
@@ -129,6 +134,9 @@ class JSONData:
 
 
 
+def val(val):
+    return locale.format_string("%.3f", val)
+
 class Ladehistorie(JSONData):
     """Data handling for BMW CARDATA Ladehistorie"""
 
@@ -160,8 +168,8 @@ class Ladehistorie(JSONData):
         bat1     = displayedStartSoc
         bat2     = displayedSoc
         tz       = timezone(timeZone)
-        start    = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        end      = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M")
+        start    = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        end      = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         duration = int(totalChargingDurationSec / 60 + 0.5) # min
         km       = str(mileage) + " " + mileageUnits.lower()
         pre      = "" ##NOTUSED: always True???## "(pre-conditoned)" if isPreconditioningActivated else ""
@@ -170,12 +178,16 @@ class Ladehistorie(JSONData):
         loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
         delta    = iX1.capacity_net * (bat2 - bat1) / 100
 
-        print(f"[{index:02d}] Charging session: {start} / {duration} min")
-        print(f"     Location: {location} {public}")
-        print(f"     Mileage: {km} {pre}")
-        print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
-        print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%")
-        print()
+        if Options.csv:
+            CSVOutput.add_csv_row([start, totalChargingDurationSec, location, public, mileage, bat1, bat2,
+                                    val(delta), val(consumed), val(increase), val(loss)])
+        else:
+            print(f"[{index:02d}] Charging session: {start} / {duration} min")
+            print(f"     Location: {location} {public}")
+            print(f"     Mileage: {km} {pre}")
+            print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
+            print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%")
+            print()
 
     
     def process_data(self):
@@ -183,10 +195,18 @@ class Ladehistorie(JSONData):
         if type(self.data) != list:
             error("Ladehistorie: top-level is of type", type(self.data))
         
+        if Options.csv:
+            CSVOutput.add_csv_fields(["Start date", "Duration", "Location", "Public", "Mileage", "SoC1", "SoC2", "Delta", "Grid", "Battery", "Loss"])
+
         # Process charge history items
         for i, obj in enumerate(self.data):
             ic(i, obj)
             self.process_item(i, obj)
+
+        # Output to CSV file
+        if Options.csv:
+            verbose(f"writing CSV output to {Options.output}")
+            CSVOutput.write_csv(Options.output)
 
 
 
@@ -200,19 +220,29 @@ def main():
     arg.add_argument("-d", "--debug", action="store_true", help="more debug messages")
     arg.add_argument("-l", "--limit", type=int, help="limit recursion depth")
     arg.add_argument("-L", "--ladehistorie", action="store_true", help="process Ladehistorie data")
+    arg.add_argument("-C", "--csv", action="store_true", help="CSV output")
+    arg.add_argument("-o", "--output", help="output file")
     arg.add_argument("filename", nargs="+", help="JSON data file")
 
     args = arg.parse_args()
 
+    if args.debug:
+        ic.enable()
+        ic(sys.version_info)
+        ic(args)
     if args.verbose:
         verbose.set_prog(NAME)
         verbose.enable()
     if args.debug:
         ic.enable()
+        ic(args)
     if args.limit:
         Options.limit = args.limit
+    if args.csv:
+        Options.csv = True
+    if args.output:
+        Options.output = args.output
 
-    ic(args)
 
     data = Ladehistorie() if args.ladehistorie else JSONData()
 
