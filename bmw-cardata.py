@@ -23,6 +23,7 @@
 import argparse
 import json
 import csv
+import locale
 from datetime import datetime
 
 # The following libs must be installed with pip
@@ -48,6 +49,30 @@ class iX1:
 
 class Options:
     limit = 0
+
+
+
+class CSVOutput:
+    csv_cache = []
+    fields = None
+
+    def add_csv_row(obj):
+        CSVOutput.csv_cache.append(obj)
+
+    def add_csv_fields(fields):
+        CSVOutput.fields = fields
+
+    def write_csv(file):
+        with open(file, 'w', newline='') as f:
+            ##FIXME: check  locale.RADIXCHAR
+            if locale.localeconv()['decimal_point'] == ",":
+                # Use ; as the separator and quote all fields for easy import in "German" Excel
+                writer = csv.writer(f, dialect="excel", delimiter=";", quoting=csv.QUOTE_ALL)
+            else:
+                writer = csv.writer(f, dialect="excel")
+            if CSVOutput.fields:
+                writer.writerow(CSVOutput.fields)
+            writer.writerows(CSVOutput.csv_cache)
 
 
 
@@ -190,6 +215,9 @@ def main():
     ic(args)
 
     data = Ladehistorie() if args.ladehistorie else JSONData()
+
+    # set default locale
+    locale.setlocale(locale.LC_ALL, "")
 
     for f in args.filename:
         verbose("processing JSON file", f)
