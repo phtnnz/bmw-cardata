@@ -177,16 +177,17 @@ class Ladehistorie(JSONData):
         increase = energyIncreaseHvbKwh             # Stored in high voltage battery
         loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
         delta    = iX1.capacity_net * (bat2 - bat1) / 100
+        kW       = energyConsumedFromPowerGridKwh / totalChargingDurationSec * 3600 if totalChargingDurationSec > 0 else 0
 
         if Options.csv:
             CSVOutput.add_csv_row([start, end, totalChargingDurationSec, location, public, mileage, bat1, bat2,
-                                    val(delta), val(consumed), val(increase), val(loss)])
+                                    val(delta), val(consumed), val(increase), val(loss), val(kW)])
         else:
             print(f"[{index:02d}] Charging session: {start} / {duration} min")
             print(f"     Location: {location} {public}")
             print(f"     Mileage: {km} {pre}")
             print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
-            print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%")
+            print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%, {kW:.1f} kW (mean)")
             print()
 
     
@@ -197,7 +198,7 @@ class Ladehistorie(JSONData):
         
         if Options.csv:
             CSVOutput.add_csv_fields(["Start date", "End date", "Duration/s", "Location", "Public", "Mileage/km", 
-                                      "SoC1/%", "SoC2/%", "Delta/kWh", "Grid/kWh", "Battery/kWh", "Loss/%"])
+                                      "SoC1/%", "SoC2/%", "Delta/kWh", "Grid/kWh", "Battery/kWh", "Loss/%", "Power/kW"])
 
         # Process charge history items
         for i, obj in enumerate(self.data):
