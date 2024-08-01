@@ -21,6 +21,8 @@
 #       Text representation of charging data completed
 # Version 0.2 / 2024-05-06
 #       Added CSV output
+# Version 0.3 / 2024-08-01
+#       Use csvoutput module
 
 import sys
 import argparse
@@ -37,6 +39,7 @@ from pytz import timezone
 
 # Local modules
 from verbose import verbose, warning, error
+from csvoutput import CSVOutput
 
 VERSION = "0.1 / 2024-02-02"
 AUTHOR  = "Martin Junius"
@@ -54,30 +57,6 @@ class Options:
     limit = 0                       # -l --limit N
     output = "Ladehistorie.csv"     # -o --output NAME
     csv    = False                  # -C --csv
-
-
-
-class CSVOutput:
-    csv_cache = []
-    fields = None
-
-    def add_csv_row(obj):
-        CSVOutput.csv_cache.append(obj)
-
-    def add_csv_fields(fields):
-        CSVOutput.fields = fields
-
-    def write_csv(file):
-        with open(file, 'w', newline='', encoding="utf-8") as f:
-            ##FIXME: check  locale.RADIXCHAR
-            if locale.localeconv()['decimal_point'] == ",":
-                # Use ; as the separator and quote all fields for easy import in "German" Excel
-                writer = csv.writer(f, dialect="excel", delimiter=";", quoting=csv.QUOTE_ALL)
-            else:
-                writer = csv.writer(f, dialect="excel")
-            if CSVOutput.fields:
-                writer.writerow(CSVOutput.fields)
-            writer.writerows(CSVOutput.csv_cache)
 
 
 
@@ -134,9 +113,6 @@ class JSONData:
 
 
 
-def val(val):
-    return locale.format_string("%.3f", val)
-
 class Ladehistorie(JSONData):
     """Data handling for BMW CARDATA Ladehistorie"""
 
@@ -180,8 +156,8 @@ class Ladehistorie(JSONData):
         kW       = energyConsumedFromPowerGridKwh / totalChargingDurationSec * 3600 if totalChargingDurationSec > 0 else 0
 
         if Options.csv:
-            CSVOutput.add_csv_row([start, end, totalChargingDurationSec, location, public, mileage, bat1, bat2,
-                                    val(delta), val(consumed), val(increase), val(loss), val(kW)])
+            CSVOutput.add_row([start, end, totalChargingDurationSec, location, public, mileage, bat1, bat2,
+                               delta, consumed, increase, loss, kW])
         else:
             print(f"[{index:02d}] Charging session: {start} / {duration} min")
             print(f"     Location: {location} {public}")
@@ -197,7 +173,7 @@ class Ladehistorie(JSONData):
             error("Ladehistorie: top-level is of type", type(self.data))
         
         if Options.csv:
-            CSVOutput.add_csv_fields(["Start date", "End date", "Duration/s", "Location", "Public", "Mileage/km", 
+            CSVOutput.add_fields(["Start date", "End date", "Duration/s", "Location", "Public", "Mileage/km", 
                                       "SoC1/%", "SoC2/%", "Delta/kWh", "Grid/kWh", "Battery/kWh", "Loss/%", "Power/kW"])
 
         # Process charge history items
@@ -208,7 +184,7 @@ class Ladehistorie(JSONData):
         # Output to CSV file
         if Options.csv:
             verbose(f"writing CSV output to {Options.output}")
-            CSVOutput.write_csv(Options.output)
+            CSVOutput.write(Options.output)
 
 
 
@@ -247,9 +223,6 @@ def main():
 
 
     data = Ladehistorie() if args.ladehistorie else JSONData()
-
-    # set default locale
-    locale.setlocale(locale.LC_ALL, "")
 
     for f in args.filename:
         verbose("processing JSON file", f)
