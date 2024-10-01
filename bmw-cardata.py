@@ -27,8 +27,6 @@
 import sys
 import argparse
 import json
-import csv
-import locale
 from datetime import datetime
 
 # The following libs must be installed with pip
