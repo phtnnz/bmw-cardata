@@ -242,7 +242,7 @@ def main():
     arg.add_argument("-d", "--debug", action="store_true", help="more debug messages")
     arg.add_argument("-l", "--limit", type=int, help="limit recursion depth")
     arg.add_argument("-L", "--ladehistorie", action="store_true", help="process Ladehistorie data")
-    arg.add_argument("-R", "--reifendiagnose", action="store_true", help="process Reifediagnose data")
+    arg.add_argument("-R", "--reifendiagnose", action="store_true", help="process Reifendiagnose data")
     arg.add_argument("-C", "--csv", action="store_true", help="CSV output")
     arg.add_argument("-o", "--output", help="output file")
     arg.add_argument("filename", nargs="+", help="JSON data file")
