@@ -23,6 +23,8 @@
 #       Added CSV output
 # Version 0.3 / 2024-08-01
 #       Use csvoutput module
+# Version 0.4 / 2024-11-01
+#       Added support for Reifendiagnose -R --reifendiagnose
 
 import sys
 import argparse
@@ -39,7 +41,7 @@ from pytz import timezone
 from verbose import verbose, warning, error
 from csvoutput import CSVOutput
 
-VERSION = "0.1 / 2024-02-02"
+VERSION = "0.4 / 2024-11-01"
 AUTHOR  = "Martin Junius"
 NAME    = "bmw-cardata"
 
@@ -186,6 +188,50 @@ class Ladehistorie(JSONData):
 
 
 
+class Reifendiagnose(JSONData):
+    """Data handling for BMW CARDATA Reifendiagnose"""
+
+    def __init__(self):
+        super().__init__()
+
+
+    def process_item(self, obj):
+        # Obj is a dict {}
+        if type(obj) != dict:
+            error("Reifendiagnose: item is of type", type(obj))
+
+        # Get tyres
+        for tyre in [ "frontLeft", "frontRight", "rearLeft", "rearRight" ]:
+            obj1     = obj[tyre]
+            dim      = obj1["dimension"]["value"]
+            date     = obj1["mountingDate"]["value"]
+            part     = obj1["partNumber"]["value"]
+            runflat  = obj1["runFlat"]["value"]
+            season   = obj1["season"]["value"]
+            tread    = obj1["tread"]["value"]
+            proddate = obj1["tyreProductionDate"]["value"]
+            wear     = obj1["tyreWear"].get("value") or "n/a"
+
+            print(f"  {tyre.capitalize():<10s}  {tread}, {dim} ({season}), {part}, {date}, {wear}")
+
+
+    
+    def process_data(self):
+        # Reifendiagnose top-level is a dict []
+        if type(self.data) != dict:
+            error("Reifendiagnose: top-level is of type", type(self.data))
+        
+        # Dig deeper ... ;-)
+        obj = self.data["passengerCar"]
+        mounted   = obj["mountedTyres"]
+        unmounted = obj["unmountedTyres"]
+        print("Mounted tyres:")
+        self.process_item(mounted)
+        print("Unmounted tyres:")
+        self.process_item(unmounted)
+
+
+
 
 def main():
     arg = argparse.ArgumentParser(
@@ -196,6 +242,7 @@ def main():
     arg.add_argument("-d", "--debug", action="store_true", help="more debug messages")
     arg.add_argument("-l", "--limit", type=int, help="limit recursion depth")
     arg.add_argument("-L", "--ladehistorie", action="store_true", help="process Ladehistorie data")
+    arg.add_argument("-R", "--reifendiagnose", action="store_true", help="process Reifediagnose data")
     arg.add_argument("-C", "--csv", action="store_true", help="CSV output")
     arg.add_argument("-o", "--output", help="output file")
     arg.add_argument("filename", nargs="+", help="JSON data file")
@@ -209,9 +256,6 @@ def main():
     if args.verbose:
         verbose.set_prog(NAME)
         verbose.enable()
-    if args.debug:
-        ic.enable()
-        ic(args)
     if args.limit:
         Options.limit = args.limit
     if args.csv:
@@ -220,7 +264,11 @@ def main():
         Options.output = args.output
 
 
-    data = Ladehistorie() if args.ladehistorie else JSONData()
+    data = JSONData()
+    if args.ladehistorie:
+        data = Ladehistorie()
+    if args.reifendiagnose:
+        data = Reifendiagnose()
 
     for f in args.filename:
         verbose("processing JSON file", f)
