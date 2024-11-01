@@ -19,7 +19,7 @@ limitations under the License.
 
 ## About
 
-This is my personal playground for working with the BMW CarData, Ladehistories (charging history) and Reifendiagnose (type diagnosis).
+This is my personal playground for working with the BMW CarData, Ladehistorie (charging history) and Reifendiagnose (type diagnosis).
 
 
 ## bmw-cardata
