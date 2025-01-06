@@ -39,7 +39,7 @@ from pytz import timezone
 
 # Local modules
 from verbose import verbose, warning, error
-from csvoutput import CSVOutput
+from csvoutput import csv_output
 
 VERSION = "0.4 / 2024-11-01"
 AUTHOR  = "Martin Junius"
@@ -156,7 +156,7 @@ class Ladehistorie(JSONData):
         kW       = energyConsumedFromPowerGridKwh / totalChargingDurationSec * 3600 if totalChargingDurationSec > 0 else 0
 
         if Options.csv:
-            CSVOutput.add_row([start, end, totalChargingDurationSec, location, public, mileage, bat1, bat2,
+            csv_output.add_row([start, end, totalChargingDurationSec, location, public, mileage, bat1, bat2,
                                delta, consumed, increase, loss, kW])
         else:
             print(f"[{index:02d}] Charging session: {start} / {duration} min")
@@ -173,7 +173,7 @@ class Ladehistorie(JSONData):
             error("Ladehistorie: top-level is of type", type(self.data))
         
         if Options.csv:
-            CSVOutput.add_fields(["Start date", "End date", "Duration/s", "Location", "Public", "Mileage/km", 
+            csv_output.add_fields(["Start date", "End date", "Duration/s", "Location", "Public", "Mileage/km", 
                                       "SoC1/%", "SoC2/%", "Delta/kWh", "Grid/kWh", "Battery/kWh", "Loss/%", "Power/kW"])
 
         # Process charge history items
@@ -184,7 +184,7 @@ class Ladehistorie(JSONData):
         # Output to CSV file
         if Options.csv:
             verbose(f"writing CSV output to {Options.output}")
-            CSVOutput.write(Options.output)
+            csv_output.write(Options.output)
 
 
 
