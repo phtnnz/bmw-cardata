@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2023 Martin Junius
+# Copyright 2024-2025 Martin Junius
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,24 +25,28 @@
 #       Use csvoutput module
 # Version 0.4 / 2024-11-01
 #       Added support for Reifendiagnose -R --reifendiagnose
+# Version 0.5 / 2025-01-07
+#       Reworked csvoutput, timezone handling
 
 import sys
 import argparse
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 # The following libs must be installed with pip
+# tzdata required on Windows for IANA timezone names!
+import tzdata
 from icecream import ic
 # Disable debugging
 ic.disable()
-##FIXME: replace pytz
-from pytz import timezone
 
 # Local modules
 from verbose import verbose, warning, error
 from csvoutput import csv_output
 
-VERSION = "0.4 / 2024-11-01"
+VERSION = "0.5 / 2025-01-07"
 AUTHOR  = "Martin Junius"
 NAME    = "bmw-cardata"
 
@@ -144,7 +148,7 @@ class Ladehistorie(JSONData):
 
         bat1     = displayedStartSoc
         bat2     = displayedSoc
-        tz       = timezone(timeZone)
+        tz       = ZoneInfo(timeZone)
         start    = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         end      = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         duration = int(totalChargingDurationSec / 60 + 0.5) # min
