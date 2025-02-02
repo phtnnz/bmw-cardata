@@ -131,17 +131,21 @@ class Ladehistorie(JSONData):
             error("Ladehistorie: item is of type", type(obj))
 
         # Get attributes
-        displayedSoc                    = obj["displayedSoc"]
-        displayedStartSoc               = obj["displayedStartSoc"]
-        endTime                         = obj["endTime"]
-        energyConsumedFromPowerGridKwh  = obj["energyConsumedFromPowerGridKwh"]
-        energyIncreaseHvbKwh            = obj["energyIncreaseHvbKwh"]
-        isPreconditioningActivated      = obj["isPreconditioningActivated"]
-        mileage                         = obj["mileage"]
-        mileageUnits                    = obj["mileageUnits"]
-        startTime                       = obj["startTime"]
-        timeZone                        = obj["timeZone"]
-        totalChargingDurationSec        = obj["totalChargingDurationSec"]
+        startTime                       = obj.get("startTime")
+        endTime                         = obj.get("endTime")
+        if not startTime or not endTime:
+            # Don't process item, if charging was/is on-going while the report was generated
+            return
+
+        displayedSoc                    = obj.get("displayedSoc")
+        displayedStartSoc               = obj.get("displayedStartSoc")
+        energyConsumedFromPowerGridKwh  = obj.get("energyConsumedFromPowerGridKwh")
+        energyIncreaseHvbKwh            = obj.get("energyIncreaseHvbKwh")
+        isPreconditioningActivated      = obj.get("isPreconditioningActivated")
+        mileage                         = obj.get("mileage")
+        mileageUnits                    = obj.get("mileageUnits")
+        timeZone                        = obj.get("timeZone")
+        totalChargingDurationSec        = obj.get("totalChargingDurationSec")
 
         location                        = obj["chargingLocation"]["formattedAddress"]
         public                          = "(Public)" if obj["publicChargingPoint"] else ""
