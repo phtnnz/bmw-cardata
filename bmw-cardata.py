@@ -163,13 +163,12 @@ class Ladehistorie(JSONData):
         pre      = "" ##NOTUSED: always True???## "(pre-conditoned)" if isPreconditioningActivated else ""
         consumed = energyConsumedFromPowerGridKwh   # Consumed from grid
         increase = energyIncreaseHvbKwh or 0        # Stored in high voltage battery,
-                                                    # seems to be missing in in CarData from 2025-05+
-        if increase:                                # Use old calculation
-            loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
-        else:                                       # Use calculation based on SoC delta
-            loss     = (consumed - delta) / consumed * 100 if consumed > 0 else 0
-            if loss < 0:
-                loss = 0
+                                                    # seems to be missing in in CarData from 2025-05+,
+        if not increase:                            # in this case replace with value from SoC delta
+            increase = delta
+        loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
+        if loss < 0:
+            loss = 0
         kW       = energyConsumedFromPowerGridKwh / totalChargingDurationSec * 3600 if totalChargingDurationSec > 0 else 0
 
         if Options.csv:
