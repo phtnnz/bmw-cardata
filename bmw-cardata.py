@@ -27,6 +27,8 @@
 #       Added support for Reifendiagnose -R --reifendiagnose
 # Version 0.5 / 2025-01-07
 #       Reworked csvoutput, timezone handling
+# Version 0.6 / 2025-05-13
+#       Fixed missing energyIncreaseHvbKwh in newest BMW CarData
 
 import sys
 import argparse
@@ -46,7 +48,7 @@ ic.disable()
 from verbose import verbose, warning, error
 from csvoutput import csv_output
 
-VERSION = "0.5 / 2025-01-07"
+VERSION = "0.6 / 2025-05-13"
 AUTHOR  = "Martin Junius"
 NAME    = "bmw-cardata"
 
@@ -152,6 +154,7 @@ class Ladehistorie(JSONData):
 
         bat1     = displayedStartSoc
         bat2     = displayedSoc
+        delta    = iX1.capacity_net * (bat2 - bat1) / 100
         tz       = ZoneInfo(timeZone)
         start    = datetime.fromtimestamp(startTime).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         end      = datetime.fromtimestamp(endTime).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -159,9 +162,14 @@ class Ladehistorie(JSONData):
         km       = str(mileage) + " " + mileageUnits.lower()
         pre      = "" ##NOTUSED: always True???## "(pre-conditoned)" if isPreconditioningActivated else ""
         consumed = energyConsumedFromPowerGridKwh   # Consumed from grid
-        increase = energyIncreaseHvbKwh             # Stored in high voltage battery
-        loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
-        delta    = iX1.capacity_net * (bat2 - bat1) / 100
+        increase = energyIncreaseHvbKwh or 0        # Stored in high voltage battery,
+                                                    # seems to be missing in in CarData from 2025-05+
+        if increase:                                # Use old calculation
+            loss     = (consumed - increase) / consumed * 100 if consumed > 0 else 0
+        else:                                       # Use calculation based on SoC delta
+            loss     = (consumed - delta) / consumed * 100 if consumed > 0 else 0
+            if loss < 0:
+                loss = 0
         kW       = energyConsumedFromPowerGridKwh / totalChargingDurationSec * 3600 if totalChargingDurationSec > 0 else 0
 
         if Options.csv:
@@ -172,7 +180,10 @@ class Ladehistorie(JSONData):
             print(f"     Location: {location} {public}")
             print(f"     Mileage: {km} {pre}")
             print(f"     Battery: {bat1}% -> {bat2}% (~{delta:.2f} kWh)")
-            print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%, {kW:.1f} kW (mean)")
+            if increase:
+                print(f"     Energy: {consumed:.2f} kWh from grid -> {increase:.2f} kWh to battery, loss {loss:.1f}%, {kW:.1f} kW (mean)")
+            else:
+                print(f"     Energy: {consumed:.2f} kWh from grid, loss {loss:.1f}%, {kW:.1f} kW (mean)")
             print()
 
     
