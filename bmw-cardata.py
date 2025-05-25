@@ -28,7 +28,7 @@
 # Version 0.5 / 2025-01-07
 #       Reworked csvoutput, timezone handling
 # Version 0.6 / 2025-05-13
-#       Fixed missing energyIncreaseHvbKwh in newest BMW CarData
+#       Fixed missing energyIncreaseHvbKwh in latest BMW CarData
 
 import sys
 import argparse
@@ -55,12 +55,18 @@ NAME    = "bmw-cardata"
 
 
 class iX1:
+    """
+    Parameters for BMW iX1 BEV
+    """
     capacity_net   = 64.8   # Net capacity battery / kWh
     capacity_gross = 66.5   # Gross capacity battery / kWh
 
 
 
 class Options:
+    """
+    Command line options
+    """
     limit = 0                       # -l --limit N
     output = "Ladehistorie.csv"     # -o --output NAME
     csv    = False                  # -C --csv
@@ -68,7 +74,9 @@ class Options:
 
 
 class JSONData:
-    """Holds data read from BMW CARDATA .json"""
+    """
+    Data read from BMW CARDATA .json
+    """
 
     def __init__(self):
         self.data = None
@@ -121,7 +129,9 @@ class JSONData:
 
 
 class Ladehistorie(JSONData):
-    """Data handling for BMW CARDATA Ladehistorie"""
+    """
+    Data handling for BMW CARDATA Ladehistorie
+    """
 
     def __init__(self):
         super().__init__()
@@ -208,7 +218,9 @@ class Ladehistorie(JSONData):
 
 
 class Reifendiagnose(JSONData):
-    """Data handling for BMW CARDATA Reifendiagnose"""
+    """
+    Data handling for BMW CARDATA Reifendiagnose
+    """
 
     def __init__(self):
         super().__init__()
