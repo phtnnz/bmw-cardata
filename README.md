@@ -21,6 +21,8 @@ limitations under the License.
 
 This is my personal playground for working with the BMW CarData, Ladehistorie (charging history) and Reifendiagnose (tyre diagnostics).
 
+As of lately (approx. June 2025) the BMW CarData archive doesn't contain the Ladehistorie data anymore, which make this script less useful. I complained to BMW ConnectDrive support, but to no avail. :-(
+
 
 ## bmw-cardata
 ```
